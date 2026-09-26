@@ -1,0 +1,33 @@
+# Arduino build output
+build/
+build-*/
+build-profiles/
+
+# Compiled files
+*.a
+*.bin
+*.d
+*.elf
+*.exe
+*.hex
+*.map
+*.o
+*.obj
+
+# Local logs and board selection
+*.log
+sketch.yaml
+
+# Generated native-test images
+extras/tests/*.ppm
+
+# Local safety snapshots retained outside version control
+extras/pre-*-snapshot-*/
+extras/pre-*-snapshot-*.sha256
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
