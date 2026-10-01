@@ -15,7 +15,7 @@ The native C++ suite contains 164 passing checks covering:
 - ESP-NOW packet construction, checksum validation and range rejection;
 - duplicate, out-of-order and master-restart handling;
 - receiver synchronization followed by independent accelerated time;
-- raster bounds and seven-segment geometry.
+- 128×32 raster bounds and seven-segment geometry.
 
 Run the suite with:
 
@@ -31,11 +31,12 @@ Binary inspection confirms that only Profile 1 includes `BUTTONS_READY` and `SYN
 
 ## Prototype verification
 
-- The 64×64 HUB75 panel and SEENGREAT adapter have displayed the red timer face.
+- Two chained P4 64×32 HUB75 panels and the SEENGREAT adapter display one continuous 128×32 timer face.
+- The measured P4 color routing produces the intended red output.
+- Negative HUB75 clock phase removes the intermittent edge pixels seen with the default phase.
 - Profile 1 has been flashed to the current ESP32-S3 and verified after upload.
-- UART boot reports Clock 1, 1× speed, buttons enabled, ESP-NOW master role, channel 1 and successful HUB75 initialization.
+- UART boot reports Clock 1, 1× speed, buttons enabled, ESP-NOW master role, channel 1, two-panel initialization, the P4 color map and negative clock phase.
 - The physical buttons still require final soldering and an on-device input test.
 - End-to-end ESP-NOW synchronization requires at least one receiver board and remains pending.
-- The proposed three-panel-wide display remains unimplemented and untested.
 
 Compiled firmware, upload transcripts, serial logs, local port names and device identifiers are excluded from version control.

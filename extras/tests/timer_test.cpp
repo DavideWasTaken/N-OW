@@ -31,10 +31,12 @@ static bool hoursRepeat(const now_timer::ButtonPairEvent &event) {
          !event.bothReleasedEvent;
 }
 struct Canvas {
-  bool pixels[64][64] = {};
+  static constexpr int WIDTH = 128;
+  static constexpr int HEIGHT = 32;
+  bool pixels[HEIGHT][WIDTH] = {};
   bool outOfBounds = false;
   void fillRect(int x, int y, int w, int h, uint16_t color) {
-    if (x < 0 || y < 0 || w < 0 || h < 0 || x+w > 64 || y+h > 64) {
+    if (x < 0 || y < 0 || w < 0 || h < 0 || x+w > WIDTH || y+h > HEIGHT) {
       outOfBounds = true; return;
     }
     for (int row=y; row<y+h; ++row)
@@ -46,7 +48,7 @@ struct Canvas {
   void save(const char *path) const {
     FILE *file = nullptr;
     if (fopen_s(&file,path,"wb") || !file) { ++failures; return; }
-    fprintf(file,"P6\n64 64\n255\n");
+    fprintf(file,"P6\n%d %d\n255\n",WIDTH,HEIGHT);
     for (const auto &row:pixels) for (bool p:row) {
       const unsigned char rgb[3] = {static_cast<unsigned char>(p?255:0),0,0};
       fwrite(rgb,1,3,file);
@@ -669,9 +671,9 @@ int main() {
   check(e.hours==23 && e.minutes==59 && e.seconds==59,"23:59:59 formatting");
   Canvas all;
   drawTime(all,{88,88,88},0xF800);
-  check(!all.outOfBounds && all.lit()>500,"visible face fits 64x64");
-  check(all.pixels[19][1] && all.pixels[19][62],"uses 62 pixels of width");
-  check(all.pixels[25][20] && all.pixels[37][42],"two visible colon separators");
+  check(!all.outOfBounds && all.lit()>1000,"visible face fits 128x32");
+  check(all.pixels[3][2] && all.pixels[3][125],"uses 124 pixels of width");
+  check(all.pixels[9][40] && all.pixels[21][84],"two visible colon separators");
   Canvas zero,one;
   drawTime(zero,{0,0,0},0xF800); drawTime(one,{11,11,11},0xF800);
   check(zero.lit()>one.lit() && one.lit()>0,"distinct digit shapes");

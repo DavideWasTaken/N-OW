@@ -26,14 +26,26 @@ if (-not $arduinoCli -or -not (Test-Path -LiteralPath $arduinoCli)) {
 
 $profilesRoot = Join-Path $project 'build-profiles'
 $workRoot = Join-Path $profilesRoot '_work'
+$sketchRoot = Join-Path $workRoot 'NOW_Timer'
+$buildRoot = Join-Path $workRoot 'builds'
 New-Item -ItemType Directory -Force -Path $profilesRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $workRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $sketchRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $buildRoot | Out-Null
+
+# Arduino requires the main .ino file to have the same name as its containing
+# directory. Stage only the sketch sources so builds work from any clone path.
+Get-ChildItem -LiteralPath $sketchRoot -File -ErrorAction SilentlyContinue |
+  Remove-Item -Force
+Copy-Item -LiteralPath (Join-Path $project 'NOW_Timer.ino') `
+  -Destination $sketchRoot -Force
+Copy-Item -Path (Join-Path $project '*.h') -Destination $sketchRoot -Force
 $manifest = @()
 
 foreach ($profile in $profiles) {
   $name = "clock-$($profile.Clock)-$($profile.Speed)x"
   $output = Join-Path $profilesRoot $name
-  $buildPath = Join-Path $workRoot $name
+  $buildPath = Join-Path $buildRoot $name
   $log = Join-Path $profilesRoot "$name-compile.log"
   New-Item -ItemType Directory -Force -Path $output | Out-Null
   New-Item -ItemType Directory -Force -Path $buildPath | Out-Null
@@ -41,7 +53,7 @@ foreach ($profile in $profiles) {
   & $arduinoCli compile --clean --fqbn $fqbn `
     --build-property "compiler.cpp.extra_flags=-DNOW_CLOCK_PROFILE=$($profile.Clock)" `
     --build-path $buildPath `
-    --output-dir $output $project *> $log
+    --output-dir $output $sketchRoot *> $log
   if ($LASTEXITCODE -ne 0) {
     Get-Content -LiteralPath $log
     throw "Compile failed for $name"

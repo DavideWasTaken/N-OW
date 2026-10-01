@@ -8,19 +8,21 @@
 #include "TimeSyncProtocol.h"
 #include "TimeSyncRadio.h"
 
-// SEENGREAT RGB Matrix Adapter Board (E) Rev 2.2; one 64x64 HUB75E panel.
-// Same wiring and brightness as the verified RGB test.
+// SEENGREAT RGB Matrix Adapter Board (E) Rev 2.2; two chained 64x32
+// 1/16-scan HUB75 panels, presented as one 128x32 display.
 constexpr uint8_t BRIGHTNESS = 20;
 constexpr int OE_PIN = 4;
 constexpr int HOURS_BUTTON_PIN = 10;
 constexpr int MINUTES_BUTTON_PIN = 11;
 HUB75_I2S_CFG::i2s_pins pins = {
-  18, 8, 17,       // R1, G1, B1
-  16, 1, 15,       // R2, G2, B2
+  // Measured color routing for these P4 modules:
+  // GPIO 8/1 -> red, GPIO 17/15 -> green, GPIO 18/16 -> blue.
+  8, 17, 18,       // R1, G1, B1
+  1, 15, 16,       // R2, G2, B2
   7, 48, 6, 47, 2, // A, B, C, D, E
   21, 4, 5         // LAT, OE, CLK
 };
-HUB75_I2S_CFG config(64, 64, 1, pins);
+HUB75_I2S_CFG config(64, 32, 2, pins);
 MatrixPanel_I2S_DMA *display = nullptr;
 now_timer::ButtonInputs buttons;
 now_timer::TimerController timer(now_timer::SPEED_MULTIPLIER);
@@ -57,6 +59,9 @@ void setup() {
                      ? "MASTER"
                      : "RECEIVER");
   config.i2sspeed = HUB75_I2S_CFG::HZ_10M;
+  // These P4 panels show intermittent edge pixels on the default positive
+  // clock edge. Clocking data on the opposite edge removes that ghosting.
+  config.clkphase = false;
   config.double_buff = true;
   display = new MatrixPanel_I2S_DMA(config);
   if (!display->begin()) {
@@ -70,7 +75,10 @@ void setup() {
   display->setBrightness8(BRIGHTNESS);
   display->clearScreen();
   timer.begin(static_cast<uint64_t>(esp_timer_get_time()));
-  Serial0.println("HUB75_INIT_OK; DOUBLE_BUFFER=ON; PANEL=64x64; BRIGHTNESS=20");
+  Serial0.println(
+      "HUB75_INIT_OK; DOUBLE_BUFFER=ON; PANEL=64x32; CHAIN=2; "
+      "CANVAS=128x32; BRIGHTNESS=20; COLOR_MAP=P4_8_17_18; "
+      "CLK_PHASE=NEGATIVE");
   const now_timer::SyncRole syncRole =
       now_timer::syncRoleForProfile(now_timer::CLOCK_PROFILE);
   const bool syncReady = syncRadio.begin(syncRole);

@@ -4,7 +4,7 @@
 
 N:OW is an ESP32-S3 and HUB75 firmware project created for an art installation for [matteomandelli.com](https://matteomandelli.com/). The installation consists of five red `HH:MM:SS` clocks. Clock 1 runs in real time and acts as the master; Clocks 2–5 accelerate the same starting time by progressively larger factors.
 
-![N:OW 64×64 timer preview](extras/timer-preview.png)
+![N:OW 128×32 timer preview](extras/timer-preview.png)
 
 ## The five clocks
 
@@ -30,16 +30,16 @@ At 250×, one displayed second lasts 4 ms, one displayed minute lasts 240 ms, an
 
 ## Current hardware bill of materials
 
-The quantities below describe the current single-panel design for the complete five-clock installation.
+The quantities below describe the validated two-panel design for the complete five-clock installation.
 
 | Component | Per clock | Total | Notes |
 |---|---:|---:|---|
 | Waveshare ESP32-S3-DEV-KIT-N16R8-M | 1 | 5 | 16 MB flash, 8 MB PSRAM, headers fitted, onboard antenna |
 | SEENGREAT RGB Matrix Adapter Board (E), Rev 2.2 | 1 | 5 | Connects the ESP32-S3 to the HUB75E panel |
-| Waveshare 64×64 HUB75E RGB panel, 160×160 mm | 1 | 5 | Current firmware target is one 64×64 panel per clock |
-| HUB75 ribbon cable | 1 | 5 | Adapter to panel data connection |
-| Panel power lead | 1 | 5 | Heavy-gauge 5 V and GND connection |
-| Regulated 5 V power supply | 1 | 5 | The prototype uses 5 V / 8 A; size the final supply for the actual panel and brightness |
+| P4 indoor HUB75 RGB panel, 64×32, 256×128 mm, 1/16 scan, 1200 nit | 2 | 10 | Two panels form one 128×32 clock |
+| HUB75 ribbon cable | 2 | 10 | One adapter-to-panel cable and one panel-to-panel cable per clock |
+| Panel power lead | 2 | 10 | Each panel receives its own 5 V and GND pair from the adapter |
+| Regulated 5 V / 8 A power supply | 1 | 5 | Validated at firmware brightness 20/255; use one adequately fused supply per clock |
 | USB-C data cable | — | 1 | Used for flashing and serial verification |
 | Enclosure, standoffs, strain relief and ventilation | 1 set | 5 sets | Keep conductive parts away from exposed electronics |
 
@@ -50,7 +50,7 @@ Master-clock-only parts:
 | Momentary normally-open SPST pushbutton | 2 | One for hours and one for minutes; prewired panel-mount buttons are convenient |
 | Hookup wire and heat-shrink tubing | As required | Both button ground wires may share the same ESP32/SEENGREAT GND |
 
-For a future display that is three panels wide, the installation would require **15 panels**, five controller-to-panel ribbons, ten panel-to-panel ribbons, and a substantially larger fused 5 V distribution system. That layout is not yet implemented or electrically validated: the current firmware is configured as `64 × 64`, chain length `1`. Validate one complete three-panel prototype before purchasing the remaining panels and power hardware.
+Connect `SEENGREAT HUB75 → panel 1 IN`, then `panel 1 OUT → panel 2 IN`. Both panels must face the same direction. Power the two modules separately from the adapter's two 5 V/GND outputs; do not pass panel power through the HUB75 ribbon.
 
 ## Button behavior
 
@@ -73,12 +73,15 @@ Four-pin tactile switches connect the two pins on each physical side internally.
 
 ## Display
 
-- Resolution: `64 × 64`
+- Physical layout: two chained `64 × 32` P4 modules
+- Effective resolution: `128 × 32`
 - Content: red `HH:MM:SS` on one line
 - Glyph style: custom seven-segment digits
-- Active drawing area: 62 × 30 pixels
+- Active drawing area: 124 × 30 pixels
 - Brightness: 20/255 in the verified prototype configuration
 - Rendering: HUB75 DMA with double buffering
+- Panel timing: negative clock phase, required to remove intermittent edge pixels on the tested modules
+- Color routing: panel-specific RGB pin order validated on the 1200-nit P4 modules
 - Time domain: 24 hours, wrapping from `23:59:59` to `00:00:00`
 - Persistence: volatile; every power cycle starts at `00:00:00` until Clock 1 is set
 
@@ -109,16 +112,7 @@ From PowerShell, with `arduino-cli` available either on `PATH` or through a stan
 
 The script creates one isolated build per profile under the ignored `build-profiles/` directory and writes a SHA-256 manifest. Compiled firmware, local logs, serial-port selections and build caches are intentionally excluded from Git.
 
-To compile a single profile manually, define `NOW_CLOCK_PROFILE` from `1` through `5`:
-
-```powershell
-arduino-cli compile `
-  --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,UploadSpeed=115200" `
-  --build-property "compiler.cpp.extra_flags=-DNOW_CLOCK_PROFILE=1" `
-  .
-```
-
-Profile 1 is also the source default when no build property is supplied.
+The script stages the Arduino sketch under the required `NOW_Timer` directory name, so it works regardless of the name or location of the Git clone. Profile 1 remains the source default when no build property is supplied.
 
 ## Run the host tests
 
@@ -128,7 +122,7 @@ On Windows with Visual Studio C++ Build Tools installed:
 ./extras/tests/run-tests.cmd
 ```
 
-The native suite currently contains 164 checks covering profile speeds, the 24-hour cycle, button debounce and repeat timing, setting confirmation, ESP-NOW packet validation and deduplication, synchronization, and the exact 64×64 raster bounds.
+The native suite currently contains 164 checks covering profile speeds, the 24-hour cycle, button debounce and repeat timing, setting confirmation, ESP-NOW packet validation and deduplication, synchronization, and the exact 128×32 raster bounds.
 
 ## Verification status
 
@@ -138,10 +132,10 @@ The native suite currently contains 164 checks covering profile speeds, the 24-h
 | All five ESP32-S3 profiles compile | Passed |
 | Distinct firmware hashes for all profiles | Passed |
 | Clock 1 flash verification and serial boot | Passed |
-| Single 64×64 panel rendering | Tested on the prototype |
+| Two chained 64×32 P4 panels | Tested on the prototype |
+| Red color routing and negative clock phase | Tested on the prototype |
 | Physical master buttons | Pending final wiring test |
 | Physical ESP-NOW synchronization between boards | Pending arrival of the receiver boards |
-| Three-panel-wide display | Planned, not implemented or tested |
 
 See [Firmware profiles](docs/FIRMWARE_PROFILES.md), [Technical design](docs/PROJECT.md), and [Verification record](docs/VERIFICATION.md) for more detail.
 

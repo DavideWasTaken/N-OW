@@ -6,7 +6,9 @@ N:OW drives five red digital clocks for an art installation created for [matteom
 
 ## Rendering
 
-The current target is one 64×64 HUB75E panel per clock. Six custom seven-segment digits occupy 62 pixels horizontally and 30 pixels vertically. The renderer draws into a cleared back buffer and flips complete DMA frames, avoiding partially drawn times.
+The current target is two chained P4 64×32 HUB75 panels per clock, producing one 128×32 canvas. Six custom seven-segment digits occupy 124 pixels horizontally and 30 pixels vertically. The renderer draws into a cleared back buffer and flips complete DMA frames, avoiding partially drawn times.
+
+The tested 1200-nit modules use a panel-specific RGB data order and require the negative HUB75 clock phase to avoid intermittent edge pixels. Both settings live in `NOW_Timer.ino` and apply identically to all five clock profiles.
 
 The clock value is derived from monotonic microseconds rather than frame count. A slow frame may skip intermediate displayed seconds, especially at 250×, but it does not accumulate timing error.
 
@@ -41,4 +43,4 @@ Radio initialization failure is reported over UART but does not stop the local d
 
 ## Current scope
 
-The firmware is configured for a 64×64 matrix with chain length 1. A three-panel-wide clock needs a new canvas layout, chain configuration, physical prototype and power validation. It is intentionally documented as planned work rather than current behavior.
+The firmware is configured for 64×32 modules with chain length 2. The prototype validates the complete 128×32 render path, color routing, clock phase and separate 5 V delivery to both panels. Physical button operation and multi-board ESP-NOW synchronization remain the outstanding installation tests.
