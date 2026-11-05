@@ -29,6 +29,9 @@ now_timer::TimerController timer(now_timer::SPEED_MULTIPLIER);
 now_timer::TimeSyncRadio syncRadio;
 uint64_t lastReportSecond = UINT64_MAX;
 bool buttonsReadyReported = false;
+uint64_t minFrameIntervalUs = 0;
+uint64_t lastRenderUs = 0;
+bool renderPending = false;
 
 void renderTime(uint32_t seconds, bool visible) {
   // Clear and draw the back buffer before displaying the complete frame.
@@ -74,11 +77,20 @@ void setup() {
   }
   display->setBrightness8(BRIGHTNESS);
   display->clearScreen();
+  // flipDMABuffer() does not wait for the DMA to leave the old front buffer,
+  // so drawing again within one panel refresh writes into the frame on screen
+  // and flashes stray pixels. Keep 1.5 refresh periods between frames.
+  const int refreshHz = display->calculated_refresh_rate > 0
+                            ? display->calculated_refresh_rate
+                            : 60;
+  minFrameIntervalUs = 1500000ULL / static_cast<uint64_t>(refreshHz);
   timer.begin(static_cast<uint64_t>(esp_timer_get_time()));
   Serial0.println(
       "HUB75_INIT_OK; DOUBLE_BUFFER=ON; PANEL=64x32; CHAIN=2; "
       "CANVAS=128x32; BRIGHTNESS=20; COLOR_MAP=P4_8_17_18; "
       "CLK_PHASE=NEGATIVE");
+  Serial0.printf("HUB75_REFRESH=%dHz; MIN_FRAME_US=%lu\n", refreshHz,
+                 static_cast<unsigned long>(minFrameIntervalUs));
   const now_timer::SyncRole syncRole =
       now_timer::syncRoleForProfile(now_timer::CLOCK_PROFILE);
   const bool syncReady = syncRadio.begin(syncRole);
@@ -127,8 +139,11 @@ void loop() {
       timer.update(nowUs, buttonEvents.hours.increment,
                    buttonEvents.minutes.increment, buttonEvents.anyDown,
                    buttonEvents.bothReleasedEvent);
-  if (state.dirty) {
+  renderPending = renderPending || state.dirty;
+  if (renderPending && nowUs - lastRenderUs >= minFrameIntervalUs) {
     renderTime(state.seconds, state.visible);
+    lastRenderUs = nowUs;
+    renderPending = false;
   }
 
   if (state.settingChanged) {
