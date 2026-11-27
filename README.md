@@ -43,6 +43,8 @@ The quantities below describe the validated two-panel design for the complete fi
 | USB-C data cable | — | 1 | Used for flashing and serial verification |
 | Enclosure, standoffs, strain relief and ventilation | 1 set | 5 sets | Keep conductive parts away from exposed electronics |
 
+In the five-clock installation, fitting an external antenna to Clock 1 alone restored ESP-NOW synchronization to Clocks 2–5. The N16R8-M listed above uses an onboard antenna. For a detachable antenna, use a master with a compatible connector, such as the N16R8-U or N16R8-UM. [Waveshare board variants](https://www.waveshare.com/product/mcu-tools/esp32-s3-dev-kit-n8r8.htm)
+
 Master-clock-only parts:
 
 | Component | Quantity | Notes |
@@ -135,7 +137,7 @@ The native suite currently contains 164 checks covering profile speeds, the 24-h
 | Two chained 64×32 P4 panels | Tested on the prototype |
 | Red color routing and negative clock phase | Tested on the prototype |
 | Physical master buttons | Pending final wiring test |
-| Physical ESP-NOW synchronization between boards | Pending arrival of the receiver boards |
+| Physical ESP-NOW synchronization between boards | Verified on Clocks 2–5 with an external antenna on Clock 1 only |
 
 See [Firmware profiles](docs/FIRMWARE_PROFILES.md), [Technical design](docs/PROJECT.md), and [Verification record](docs/VERIFICATION.md) for more detail.
 

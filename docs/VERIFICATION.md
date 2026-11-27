@@ -37,6 +37,11 @@ Binary inspection confirms that only Profile 1 includes `BUTTONS_READY` and `SYN
 - Profile 1 has been flashed to the current ESP32-S3 and verified after upload.
 - UART boot reports Clock 1, 1× speed, buttons enabled, ESP-NOW master role, channel 1, two-panel initialization, the P4 color map and negative clock phase.
 - The physical buttons still require final soldering and an on-device input test.
-- End-to-end ESP-NOW synchronization requires at least one receiver board and remains pending.
+
+## ESP-NOW installation verification
+
+- At the initial bench placement, Clock 2 detected other Wi-Fi traffic on channel 1 and received no frames from Clock 1 during the synchronization attempt.
+- After the boards were moved closer, Clock 2 captured all 20 frames of one broadcast. The recorded RSSI samples ranged from −92 to −89 dBm. A subsequent confirmation also synchronized Clock 2 with passive Wi-Fi monitoring disabled.
+- The installer confirmed that the external antenna fitted to Clock 1 alone restored synchronization to all four receivers in the five-clock installation.
 
 Compiled firmware, upload transcripts, serial logs, local port names and device identifiers are excluded from version control.
